@@ -60,6 +60,15 @@ global context and of optimizing the sensitivity and robustness
 trade-off.
 
 \subsection{Methodology}
+To obtain the Sobel highlights from
+an input image, $I_0$, and its min-max normalized Sobel image, $I_s$,
+first, at each pixel, a $3\times n$ oblong shape mask is defined along the
+direction of its Sobel edge orientation with the pixel at the center,
+as shown in Figure \ref{oblong}
+
+\Figure[t!](topskip=0pt, botskip=0pt, midskip=0pt){oblong.png}
+{An oblong shape mask placed for a pixel.\label{oblong}}.
+
 Major lines tend
 to have their lengths sufficiently long. The longer the length,
 the better the chance of the edge link is being a major line. The
@@ -121,24 +130,21 @@ $E\leftarrow EdgeLinking(I_E)$ \\
 }
 \end{algorithm}
 
-To obtain the Sobel highlights from
-an input image, $I_0$, and its min-max normalized Sobel image, $I_s$,
-first, at each pixel, a $3\times n$ oblong shape mask is defined along the
-direction of its Sobel edge orientation with the pixel at the center,
-as shown in Figure \ref{oblong}
-
-\Figure[t!](topskip=0pt, botskip=0pt, midskip=0pt){oblong.png}
-{An oblong shape mask placed for a pixel at its center along the direction
-parallel to the edge orientation or perpendicular to the intensity gradient of the
-pixel.\label{oblong}}
-
 \subsection{Results}
 To evaluate the performance of the proposed method in comparison with LSD, a top performance major line detector currently available, a major line extraction experimentation is carried out with the test images taken directly from the laboratory,
 as shown in Figure \ref{mle_result_a}.
 
-\Figure[t!](topskip=0pt, botskip=0pt, midskip=0pt){mle_result_a.png}
-{The results of major lines extracted by the proposed
-method.\label{mle_result_a}}
+%\Figure[t!](topskip=0pt, botskip=0pt, midskip=0pt){mle_result_a.png}
+%{The results of major lines extracted by the proposed
+%method.\label{mle_result_a}}
+
+\begin{figure}[t!]
+\centering
+\includegraphics[width=0.4\textwidth]{mle_result_a.png}
+\label{mle_result_a}
+\caption{The results of major lines extracted by the proposed
+method.}
+\end{figure}[t!]
 
 The indices computed for
 the proposed method and LSD are tabulated in Table \ref{mle_table}. 
@@ -159,6 +165,110 @@ Curved                      &     89\%         &     79\%     &         38\%    
 Combined                      &    76\%       &     58\%     &      40\%             &               19\% \\ \hline
 \end{tabular}
 \label{tab1}
+\end{table}
+
+\section{The Covariance Projection Framework}
+\subsection{Summary}
+The proposed method, referred to here as the Covariance Projection (CP) method, provides an
+unbiased and optimal solution in the sense of minimum mean square error (MMSE), if the projection
+is based on the minimum weighted distance on the constraint manifold. The proposed method
+not only offers a generalization of the conventional formula for handling constraints and data
+inconsistency, but also provides a new insight into data fusion in terms of a geometric-algebraic
+point of view.
+\subsection{Methodology}
+he proposed method first represents the probability of true states and measurements in the
+extended space around the data from state predictions and sensor measurements, where the extended
+space is formed by taking states and measurements as independent variables. Any constraints among
+true states and measurements that should be satisfied are then represented as a constraint manifold
+in the extended space. This is shown schematically in Figure \ref{cpf_manifold} for filtering as an example. Data fusion is accomplished by projecting the probability distribution of true states
+and measurements onto the constraint manifold.
+
+%\Figure[t!](topskip=0pt, botskip=0pt, midskip=0pt){cpf_manifold.png}
+%{Probability of true states and measurements in the extended space around the data from
+%state predictions and sensor measurements and constraint manifold.\label{cpf_manifold}}
+
+\begin{figure}[t!]
+  \centering 
+  \includegraphics[width=0.4\textwidth]{cpf_manifold.png}
+  \caption{Probability of true states and measurements in the extended space.}
+  \label{cpf_manifold}
+\end{figure}
+
+More specifically, consider two mean estimates, $\hat{x}_1$ and $\hat{x}_2$, of the state $x\in \mathbb{R}^N$, with their
+respective covariances as $P_1, P_1\in \mathbb{R}^N\times N$. Furthermore, the estimates are assumed to be correlated with
+cross-covariance $P_{12}$. The mean estimates and their covariances together with their cross-covariance in
+$\mathbb{R}^N$ are then transformed to an extended space of $\mathbb{R}^{2N}$ along with the linear constraint between the two estimates:
+\begin{equation}
+\hat{x}=\begin{bmatrix}
+\hat{x}_1 \\ \hat{x}_2
+\end{bmatrix},\ P=\begin{bmatrix}
+P_1 & P_{12} \\ P_{12}^T & P_2
+\end{bmatrix},\ C_1\hat{x}_1=C_2\hat{x}_2
+\end{equation}
+
+To find a point on the constraint manifold with minimum weighted distance, we apply the whitening transform (WT) defined as, $W=D^{-1/2}E^T$, where $D$ and $E$ are the eigenvalue and eigenvector matrices of $P$. Applying WT,
+\begin{equation}
+\hat{x}^W=W\hat{x},\ P^W=WPW^T,\ M^W=WM
+\end{equation}
+
+where the matrix $M = [C1 C2]^T$ is the subspace of the constraint manifold. The probability
+distribution is then orthogonally projected on the transformed manifold $M^W$ to satisfy the constraints
+between the data sources in the transformed space. Inverse WT is applied to
+obtain the fused mean estimate and covariance in the original space,
+\begin{equation}
+\label{xwprw}
+\tilde{x}=W^{-1}P_r W\hat{x}
+\end{equation}
+\begin{equation}
+\label{pwprprtwt}
+\tilde{P}=W^{-1}P_r P_{r}^{T}W^{-T}
+\end{equation}
+where $P_r=M^W(M^{W^T}M^W)^{-1}M^{W^T}$ is the orthogonal projection matrix. Using the definition of various
+components in (\ref{xwprw}) and (\ref{pwprprtwt}), a close form simplification can be obtained as,
+\begin{equation}
+\label{xmmtpmmtpx}
+\tilde{x}=M(M^TP^{-1}M)^{-1}M^TP^{-1}\hat{x}
+\end{equation}
+\begin{equation}
+\label{pmmtpmmt}
+\tilde{P}=M(M^TP^{-1}M)^{-1}M^T
+\end{equation}
+
+Due to the projection in extended space of $\mathbb{R}^{2N}$, (\ref{xmmtpmmtpx}) and (\ref{pmmtpmmt}) provide a fused result with respect to each data source. In the case of where $\hat{x}_1$ and $\hat{x}_2$ estimate the same entity, that is, $M=[I_N I_N]^T$, the fused result will be same for the two data sources. As such, a close form equation for fusing redundant data sources in $\mathbb{R}^N$ can be obtained from (\ref{xmmtpmmtpx}) and (\ref{pmmtpmmt}) as,
+\begin{equation}
+\tilde{x}=(M^TP^{-1}M)^{-1}M^TP^{-1}\hat{x}
+\end{equation}
+\begin{equation}
+\tilde{P}=(M^TP^{-1}M)^{-1}
+\end{equation}
+\subsection{Results}
+The simulation is carried out for 1000 Monte Carlo runs and the local estimates provided by four
+sensor nodes along with the fused result of the CP method are shown in Figure \ref{cpf_result_image}. The straight lines
+in Figure \ref{cpf_result_image} denote the trace of error covariance matrices and the solid curve represents the MSE of
+local and fused estimates. It can be observed from Figure \ref{cpf_result_image} that the MSE of the individual sensor node fluctuates around the trace. Furthermore, the accuracy relation of
+local sensor estimates and fused estimates in terms of MSE in Figure \ref{cpf_result_image} is coincident with the
+theoretical result in Table \ref{cpf_result_table}.
+
+\begin{figure}[t!]
+\centering
+\caption{The mean square error (MSE) and trace ($P_i$).}
+\label{cpf_result_image}
+\includegraphics[width=0.4\textwidth]{cpf_result_image.png}
+\end{figure}
+
+\begin{table}
+\centering
+\begin{tabular}{lllll}
+\hline
+\multirow{2}{*}{\textbf{Methods}} & \multicolumn{4}{l}{\textbf{Average RMSE}} \\ \cline{2-5} 
+                  &     \textbf{$x_1$ (m)} & \textbf{$x_2$ (m)}     &  \textbf{$\dot{x}_1$ (m/s)}   &  \textbf{$\dot{x}_2$ (m/s)}  \\ \hline
+             Unconstrained     &   95.479  &   87.496  &   52.413  &  49.972  \\
+               CP   &  50.39   &   29.093  &  36.624   &  21.145  \\
+               EP(I)   &   55.823  &  32.229   &  39.648   &  22.891  \\
+               EP(${P^{u^{-1}}}$)   &  53.023   &   30.613  &   37.186  &  21.469  \\ \hline
+\end{tabular}
+\label{cpf_result_table}
+\caption{Average RMSE for 1000 Monte Carlo Runs.}
 \end{table}
 
 \begin{thebibliography}{00}
