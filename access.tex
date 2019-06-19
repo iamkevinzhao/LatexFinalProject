@@ -388,8 +388,142 @@ the variance by longer time.
 samples collected over different time length.}
 \end{table}
 
+\section{Adaptive Bayesian Recognition}
+\subsection{Summary}
+Visual recognition and pose estimation of 3D
+industrial objects are challenging due to variations of geometric
+shapes from perspectives while lacking textures. We propose an approach\cite{7750717} to accurately recognizing industrial
+objects and estimating their poses based on an adaptive
+Bayesian framework with optimal feature selection and
+model-based point cloud matching. First, feature sets that
+provide sufficient evidences for recognition are selected from a
+predefined pool of features based on the t-test. Then, the
+evidence structure for Bayesian framework is updated
+adaptively to the feature sets selected for recognition. Finally, a
+process of coarse-fine pose estimation, composed of 3D feature
+based coarse registration followed by Octree-ICP based model
+matching for precision registration, is presented.
+\subsection{Methodology}
+Proposed framework mainly consists of two parts: 1) 3D
+object recognition with multiple evidences. 2) model-based
+3D object pose estimation. In recognition process, candidate
+evidences include global and local features are extracted from
+RGB-D data, i.e. 3D SIFT, CLB and shape descriptor, which
+describe object’s texture and general shape. After
+collecting candidate features, we apply t-test based feature
+selection to choose sufficient features for different target
+object as supporting evidences. Lastly, the measured features
+are compared with each object in database using Bayesian
+network. The object with high probability is considered as the
+recognition result. For recognized object, 3D line registration
+and 3D SIFT are used for the initial pose estimation. If both
+are available, the one with higher confidence would be
+adopted based on their registration accuracy. Then,
+Octree-ICP is employed to get the refined pose estimation.
 
+\begin{figure*}[t!]
+\centering
+\includegraphics[width=0.6\textwidth]{bayesian_framework.png}
+\caption{Framework overview}
+\end{figure*}
 
+After detecting CLB, we could get the number and their
+position in 3D space. To describe object using CLB, we would
+build a statistical model including CLB’s number and relative
+positions between CLBs based on different view-point data.
+For single object, there can exists more than one CLB,
+however, it is impossible to observe all the surface of an object
+at the same time. We have to estimate the CLB feature existing
+in one frame data. Regarding CLB’s number, it is not difficult
+to understand this model. For relative positions, we would
+store all the observed distances between any two detected
+CLB in a list for each object and set the detection accuracy as
+the variance.
+
+The object probability consists of two parts:
+\begin{equation}
+F(CLB;u_{num},\Sigma_{num})=e^{-\frac{1}{2}(x-\mu)^T\Sigma^{-1}(x-\mu)}
+\end{equation}
+\begin{equation}
+F(CLB;u_{dis},\Sigma_{dis})=max\ e^{-\frac{1}{2}(x-\mu)^T\Sigma^{-1}(x-\mu)}%,\ \mu\in u_{dis},\ \Sigma\in\Sigma_{dis}
+\end{equation}
+\begin{equation}
+F(CLB)=F(CLB;u_{num},\Sigma_{num})*F(CLB;u_{dis},\Sigma_{dis})
+\end{equation}
+where $u_{num}$, $\Sigma_{num}$ is the mean and variance of number of
+matched CLB for target object; $u_{dis}$ stored all the observed
+distances between any two detected CLB in object surface,
+while $\Sigma_{dis}$ is the measurement accuracy of CLB.
+
+For measured features, we will apply a Gaussian function
+to derive object sufficiency probability. By repeated
+measurements, we could calculate the uncertainty existing in
+each 3D shape descriptor, and has a better understanding of
+this feature’s stability under measurement environment.
+
+Prior probability:
+\begin{equation}
+F(shape\ descriptor;\mu_{obj},\Sigma_{obj})=\frac{1}{c}e^{-\frac{1}{2}(x-\mu)^T\Sigma^{-1}(x-\mu)}
+\end{equation}
+
+where $\mu$, $\Sigma$ is the mean and variance of specific shape
+descriptor.
+\subsection{Results}
+Using robot arm, we move or rotate each target object 10
+times, then capture the point cloud for pose estimation. Since
+robot arm can offer object’s position as ground truth, the
+object’s location from pose estimation is calculated and
+compared.
+
+\begin{table}
+\setlength{\tabcolsep}{3pt}
+\centering
+\begin{tabular}{| c | c | c | c | c | c | c | c |}
+\hline
+\multirow{2}{*}{\textbf{Object}} & \multirow{2}{*}{\textbf{error}} & X  & Y & Z & rX & rY  & rZ  \\
+ & & (mm) & (mm) & (mm) & (Deg) & (Deg) & (Deg) \\
+\hline
+\textbf{mouse}  & mean & 2.472 & 0.632 & 1.912 & 0.556 & 0.148 & 0.513 \\ \cline{2-8}
+\textbf{part 1} & Std & 0.943 & 1.672 & 0.552 & 0.442 & 0.197 & 0.199 \\
+\hline
+\textbf{mouse} & mean & 0.232 & 1.368 & 0.379 & 0.252 & 0.122 & 0.118 \\ \cline{2-8}
+\textbf{part 2} & Std & 0.66 & 0.617 & 0.903 & 0.164 & 0.062 & 0.161 \\
+\hline
+\textbf{mouse} & mean & 0.174 & 0.097 & 0.151 & 0.111 & 0.037 & 0.148 \\ \cline{2-8}
+\textbf{part 3} & Std & 0.133 & 0.039 & 0.141 & 0.107 & 0.049 & 0.042 \\
+\hline
+\textbf{Baby} & mean & 0.316 & 0.645 & 0.06 & 1.526 & 1.327 & 0.984 \\ \cline{2-8}
+\textbf{Control PCB} & Std & 1.357 & 0.34 & 0.293 & 1.299 & 0.227 & 0.202 \\ 
+\hline
+\textbf{Projector} & mean & 0.226 & 0.356 & 0.053 & 0.283 & 0.055 & 0.48 \\ \cline{2-8}
+\textbf{Control PCB} & Std & 0.212 & 0.151 & 0.385 & 0.165 & 0.246 & 0.181 \\
+\hline
+\multirow{2}{*}{\textbf{Clamp}} & mean & 0.446 & 0.416 & 0.172 & 0.524 & 1.645 & 1.614 \\ \cline{2-8}
+& Std & 0.067 & 0.441 & 0.185 & 1.233 & 0.521 & 1.254 \\
+\hline
+\multirow{2}{*}{\textbf{Mater}} & mean & 0.26 & 0.221 & 0.184 & 0.327 & 0.836 & 0.971 \\ \cline{2-8}
+& Std & 0.074 & 0.259 & 0.686 & 0.737 & 0.718 & 0.277 \\
+\hline
+\multirow{2}{*}{\textbf{Saw}} & mean & 0.679 & 0.621 & 1.073 & 0.382 & 1.138 & 1.567 \\ \cline{2-8}
+& Std & 0.791 & 0.245 & 0.097 & 1.44 & 1.632 & 0.531 \\
+\hline
+\textbf{Alternater} & mean & 0.937 & 0.194 & 0.126 & 0.026 & 0.156 & 0.345 \\ \cline{2-8}
+\textbf{Cover} & Std & 0.419 & 0.45 & 0.109 & 0.036 & 0.141 & 0.148 \\
+\hline
+\textbf{Base} & mean & 0.437 & 0.494 & 0.192 & 0.227 & 0.316 & 0.04 \\ \cline{2-8}
+\textbf{Board} & Std & 0.039 & 0.107 & 0.009 & 0.039 & 0.101 & 0.109 \\
+\hline
+\end{tabular}
+\caption{Performance comparison with different number of
+samples collected over different time length.}
+\end{table}
+
+\begin{figure}[t!]
+\centering
+\includegraphics[width=0.4\textwidth]{bayesian_result.png}
+\caption{Captured 3D point clouds of PCB and base board for pose
+estimation test.}
+\end{figure}
 \bibliography{mybib}
 \bibliographystyle{IEEETran}
 
