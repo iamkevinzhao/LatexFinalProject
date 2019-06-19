@@ -521,99 +521,175 @@ samples collected over different time length.}
 \begin{figure}[t!]
 \centering
 \includegraphics[width=0.4\textwidth]{bayesian_result.png}
-\caption{Captured 3D point clouds of PCB and base board for pose
-estimation test.}
+\caption{Captured 3D point clouds of PCB and base board.}
 \end{figure}
+
+\section{3D Deep Object Recognition and Semantic Understanding}
+\subsection{Summary}
+For the success of visually-guided robotic errand
+service, it is critical to ensure dependability under various
+ill-conditioned visual environments. To this end, we have
+developed Adaptive Bayesian Recognition Framework in which
+in-situ selection of multiple sets of optimal features or evidences
+as well as proactive collection of sufficient evidences are
+proposed to implement the principle of dependability. The
+framework\cite{8593985} has shown excellent performance with a limited
+number of objects in a scene. However, there arises a need to
+extend the framework for handling a larger number of objects
+without performance degradation, while avoiding difficulty in
+feature engineering. To this end, a novel deep learning
+architecture, referred to here as FER-CNN, is introduced and
+integrated into the Adaptive Bayesian Recognition Framework.
+FER-CNN has capability of not only extracting but also
+reconstructing a hierarchy of features with the layer-wise
+independent feedback connections that can be trained.
+Reconstructed features representing parts of 3D objects then
+allow them to be semantically linked to ontology for exploring
+object categories and properties. Experiments are conducted in a
+home environment with real 3D daily-life objects as well as with
+the standard ModelNet dataset.
+\subsection{Methodology}
+
+For the automatic extraction and reconstruction of a
+hierarchy of features, we propose a new CNN architecture
+with layer-wise inverse connections, termed as Feature
+Extraction and Reconstruction CNN (FER-CNN), as shown in
+Figure \ref{deep_architecture}. The FER-CNN implemented consists of 3
+sub-networks: Encoder, Decoder and Classifier. Encoder and
+Decoder sub-networks are mirrored in their configurations but
+with independent weights assigned to their respective
+convolutional and deconvolutional connections. Encoder
+sub-network consists of five 3D convolutional layers, each
+followed by the batch normalization and the ReLu activation
+function. Each of the five 3D deconvolutional layer of
+Decoder sub-network accepts an input from either of the
+following three sources: the corresponding encoder layer in
+the form of a skip connection, the upper deconvolutional layer,
+or the externally injected latent code. Classification
+sub-network, consisting of 3 fully-connected layers with a
+softmax layer at the last, takes the concatenated dense feature
+output of all encoder layers as an input.
+
+\begin{figure}[t!]
+\centering
+\label{deep_architecture}
+\includegraphics[width=0.5\textwidth]{deep_architecture.png}
+\caption{Architecture of FER-CNN for HomeMate Robot}
+\end{figure}
+
+The training of FER-CNN follows the following 3 phases
+in general:
+
+Phase 1: Supervised end-to-end training of the
+encoder and classification sub-networks using cross
+entropy loss.
+
+Phase 2: Unsupervised training of the decoder weights
+of each layer from layer 1 to 5 using the following loss
+function with the weights of Encoder sub-network
+either fixed or tunable:
+
+\begin{equation}
+\begin{split}
+\min_{E_i,D_i}( & (x-D_{i\sim 1}(E_{1\sim i(x)}))^2 \\ & + (E_{1\sim i}(x) - E_{1\sim i}(D_{i\sim 1}(E_{1\sim i})))^2)
+\end{split}
+\end{equation}
+\begin{equation}
+\begin{split}
+\min_{E_{1\sim i},D_{1\sim i}}( & (x-D_{i\sim 1}(E_{1\sim i}(x)))^2 \\ & + (E_{1\sim i}(x) - E_{1\sim i}(D_{i\sim 1}(E_{1\sim i}(x))))^2)
+\end{split}
+\end{equation}
+
+As far as reconstruction of a specific feature is concerned,
+it is not trivial as a receptive field of the input space is not only
+a function of the corresponding feature of a particular layer but
+also of its neighboring features of that layer, referred to here as
+a response field, that affect the receptive field. This happens due to the overlapping convolution
+windows dictated by the choice of layer configurations with
+window size and stride. Taking the above response field into
+consideration, we present the following, so called,
+contribution-based trained reconstruction algorithm:
+
+\begin{algorithm}
+\caption{Contribution-based trained reconstruction algorithm}
+\SetAlgoLined
+\textbf{Input}: feature "f" at location "p" in layer "L" \\
+\textbf{Output}: reconstructed receptive field in input space "x" \\
+1. Identify "Rx" receptive field of "p" in input space \\
+2. Identify “Rf” response field in layer “L” by adding the
+response field of each cell in “Rx” \\
+3. Copy “Rf” from a training sample in which it has the
+closest response to “f” at location “p” in layer “L” \\
+4. Overwrite the value of location “p” in “Rf” with “f” \\
+5. Reconstruct “x*” in input space from layer “L” using “Rf” padded with zeros \\
+6. Crop “x*” using receptive field “Rx” to obtain “x” \\ \ \\
+\end{algorithm}
+
+\subsection{Results}
+To evaluate our extended framework, we trained
+FER-CNN on ISRI\_DB consisting of RGB and 3D point
+cloud data of 247 household objects in 33 categories. The 3D
+point cloud of each object is a full-blown model generated by
+registering a number of data from different viewpoints. Based
+on the 3D point cloud models stored in the DB, we generated
+1,000 random poses per object as training samples. For
+testing, we first placed about 10 real objects defined in
+ISRI\_DB in a cluttered setting on a table. And, then, all the
+objects on the table were labeled automatically from a single
+view of RGB-D data for scene understanding. Figure \ref{deep_result} (top)
+illustrates an example of 3D region proposals based on the
+combination of 3D octree segmentation and 2D region
+proposal of Faster RCNN. 
+We repeated the experiments 10 times, each with roughly 15
+3D objects per scene. The average precision of FER-CNN for
+classification is about 91\%. Then, the object pose was
+estimated first roughly by regressing a fully connected layer
+with the features of FER-CNN and then refined by ICP,
+resulting in about 10 degrees of orientation error.
+
+\begin{figure}[t!]
+\centering
+\label{deep_result}
+\includegraphics[width=0.4\textwidth]{deep_result.png}
+\caption{Region proposals obtained using Faster R-CNN}
+\end{figure}
+
+FER-CNN is evaluated further using a large-scale of
+ModelNet dataset. ModelNet has two datasets: ModelNet10
+
+having 10 classes of 48000 3D CAD models and ModelNet40
+having 40 classes of 151,128 3D CAD models. We used two
+fully connected layers along with one dropout layer at the
+output of the encoder sub-network of FER-CNN without
+resorting to conventional 3D shape descriptors. We trained
+FER-CNN on ModelNet10 and ModelNet40 datasets and
+achieved 97\% accuracy on ModelNet10 testing dataset and
+89\% accuracy on ModelNet40 testing datasets, as shown in
+Table \ref{deep_table}.
+
+\begin{table}
+\label{deep_table}
+\setlength{\tabcolsep}{3pt}
+\centering
+\begin{tabular}{|c|c|c|}
+\hline
+ & ModelNet10 & ModelNet40 \\
+Model & Classification test & Classification test \\
+& accuracy & accuracy \\
+\hline
+VoxNet & 92\% & 83\% \\
+\hline
+FER-CNN (Ours) & 97\% & 89.5\% \\
+\hline
+\end{tabular}
+\caption{Categorization accuracy on ModelNet dataset.}
+\end{table}
+
+\section{Conclusion}
+The Intelligent System and Robotics Institute has 
+
 \bibliography{mybib}
 \bibliographystyle{IEEETran}
-
-%\begin{thebibliography}{00}
-%
-%\bibitem{b1} G. O. Young, ``Synthetic structure of industrial plastics,'' in \emph{Plastics,} 2\textsuperscript{nd} ed., vol. 3, J. Peters, Ed. New York, NY, USA: McGraw-Hill, 1964, pp. 15--64.
-%
-%\bibitem{b2} W.-K. Chen, \emph{Linear Networks and Systems.} Belmont, CA, USA: Wadsworth, 1993, pp. 123--135.
-%
-%\bibitem{b3} J. U. Duncombe, ``Infrared navigation---Part I: An assessment of feasibility,'' \emph{IEEE Trans. Electron Devices}, vol. ED-11, no. 1, pp. 34--39, Jan. 1959, 10.1109/TED.2016.2628402.
-%
-%\bibitem{b4} E. P. Wigner, ``Theory of traveling-wave optical laser,'' \emph{Phys. Rev}., vol. 134, pp. A635--A646, Dec. 1965.
-%
-%\bibitem{b5} E. H. Miller, ``A note on reflector arrays,'' \emph{IEEE Trans. Antennas Propagat}., to be published.
-%
-%\bibitem{b6} E. E. Reber, R. L. Michell, and C. J. Carter, ``Oxygen absorption in the earth's atmosphere,'' Aerospace Corp., Los Angeles, CA, USA, Tech. Rep. TR-0200 (4230-46)-3, Nov. 1988.
-%
-%\bibitem{b7} J. H. Davis and J. R. Cogdell, ``Calibration program for the 16-foot antenna,'' Elect. Eng. Res. Lab., Univ. Texas, Austin, TX, USA, Tech. Memo. NGL-006-69-3, Nov. 15, 1987.
-%
-%\bibitem{b8} \emph{Transmission Systems for Communications}, 3\textsuperscript{rd} ed., Western Electric Co., Winston-Salem, NC, USA, 1985, pp. 44--60.
-%
-%\bibitem{b9} \emph{Motorola Semiconductor Data Manual}, Motorola Semiconductor Products Inc., Phoenix, AZ, USA, 1989.
-%
-%\bibitem{b10} G. O. Young, ``Synthetic structure of industrial
-%plastics,'' in Plastics, vol. 3, Polymers of Hexadromicon, J. Peters,
-%Ed., 2\textsuperscript{nd} ed. New York, NY, USA: McGraw-Hill, 1964, pp. 15-64.
-%[Online]. Available:
-%\underline{http://www.bookref.com}.
-%
-%\bibitem{b11} \emph{The Founders' Constitution}, Philip B. Kurland
-%and Ralph Lerner, eds., Chicago, IL, USA: Univ. Chicago Press, 1987.
-%[Online]. Available: \underline{http://press-pubs.uchicago.edu/founders/}
-%
-%\bibitem{b12} The Terahertz Wave eBook. ZOmega Terahertz Corp., 2014.
-%[Online]. Available:
-%\underline{http://dl.z-thz.com/eBook/zomega\_ebook\_pdf\_1206\_sr.pdf}. Accessed on: May 19, 2014.
-%
-%\bibitem{b13} Philip B. Kurland and Ralph Lerner, eds., \emph{The
-%Founders' Constitution.} Chicago, IL, USA: Univ. of Chicago Press,
-%1987, Accessed on: Feb. 28, 2010, [Online] Available:
-%\underline{http://press-pubs.uchicago.edu/founders/}
-%
-%\bibitem{b14} J. S. Turner, ``New directions in communications,'' \emph{IEEE J. Sel. Areas Commun}., vol. 13, no. 1, pp. 11-23, Jan. 1995.
-%
-%\bibitem{b15} W. P. Risk, G. S. Kino, and H. J. Shaw, ``Fiber-optic frequency shifter using a surface acoustic wave incident at an oblique angle,'' \emph{Opt. Lett.}, vol. 11, no. 2, pp. 115--117, Feb. 1986.
-%
-%\bibitem{b16} P. Kopyt \emph{et al., ``}Electric properties of graphene-based conductive layers from DC up to terahertz range,'' \emph{IEEE THz Sci. Technol.,} to be published. DOI: 10.1109/TTHZ.2016.2544142.
-%
-%\bibitem{b17} PROCESS Corporation, Boston, MA, USA. Intranets:
-%Internet technologies deployed behind the firewall for corporate
-%productivity. Presented at INET96 Annual Meeting. [Online].
-%Available: \underline{http://home.process.com/Intranets/wp2.htp}
-%
-%\bibitem{b18} R. J. Hijmans and J. van Etten, ``Raster: Geographic analysis and modeling with raster data,'' R Package Version 2.0-12, Jan. 12, 2012. [Online]. Available: \underline {http://CRAN.R-project.org/package=raster} 
-%
-%\bibitem{b19} Teralyzer. Lytera UG, Kirchhain, Germany [Online].
-%Available:
-%\underline{http://www.lytera.de/Terahertz\_THz\_Spectroscopy.php?id=home}, Accessed on: Jun. 5, 2014
-%
-%\bibitem{b20} U.S. House. 102\textsuperscript{nd} Congress, 1\textsuperscript{st} Session. (1991, Jan. 11). \emph{H. Con. Res. 1, Sense of the Congress on Approval of}  \emph{Military Action}. [Online]. Available: LEXIS Library: GENFED File: BILLS
-%
-%\bibitem{b21} Musical toothbrush with mirror, by L.M.R. Brooks. (1992, May 19). Patent D 326 189 [Online]. Available: NEXIS Library: LEXPAT File: DES
-%
-%\bibitem{b22} D. B. Payne and J. R. Stern, ``Wavelength-switched pas- sively coupled single-mode optical network,'' in \emph{Proc. IOOC-ECOC,} Boston, MA, USA, 1985, pp. 585--590.
-%
-%\bibitem{b23} D. Ebehard and E. Voges, ``Digital single sideband detection for interferometric sensors,'' presented at the \emph{2\textsuperscript{nd} Int. Conf. Optical Fiber Sensors,} Stuttgart, Germany, Jan. 2-5, 1984.
-%
-%\bibitem{b24} G. Brandli and M. Dick, ``Alternating current fed power supply,'' U.S. Patent 4 084 217, Nov. 4, 1978.
-%
-%\bibitem{b25} J. O. Williams, ``Narrow-band analyzer,'' Ph.D. dissertation, Dept. Elect. Eng., Harvard Univ., Cambridge, MA, USA, 1993.
-%
-%\bibitem{b26} N. Kawasaki, ``Parametric study of thermal and chemical nonequilibrium nozzle flow,'' M.S. thesis, Dept. Electron. Eng., Osaka Univ., Osaka, Japan, 1993.
-%
-%\bibitem{b27} A. Harrison, private communication, May 1995.
-%
-%\bibitem{b28} B. Smith, ``An approach to graphs of linear forms,'' unpublished.
-%
-%\bibitem{b29} A. Brahms, ``Representation error for real numbers in binary computer arithmetic,'' IEEE Computer Group Repository, Paper R-67-85.
-%
-%\bibitem{b30} IEEE Criteria for Class IE Electric Systems, IEEE Standard 308, 1969.
-%
-%\bibitem{b31} Letter Symbols for Quantities, ANSI Standard Y10.5-1968.
-%
-%\bibitem{b32} R. Fardel, M. Nagel, F. Nuesch, T. Lippert, and A. Wokaun, ``Fabrication of organic light emitting diode pixels by laser-assisted forward transfer,'' \emph{Appl. Phys. Lett.}, vol. 91, no. 6, Aug. 2007, Art. no. 061103.~
-%
-%\bibitem{b33} J. Zhang and N. Tansu, ``Optical gain and laser characteristics of InGaN quantum wells on ternary InGaN substrates,'' \emph{IEEE Photon. J.}, vol. 5, no. 2, Apr. 2013, Art. no. 2600111
-%
-%\bibitem{b34} S. Azodolmolky~\emph{et al.}, Experimental demonstration of an impairment aware network planning and operation tool for transparent/translucent optical networks,''~\emph{J. Lightw. Technol.}, vol. 29, no. 4, pp. 439--448, Sep. 2011.
-%
-%\end{thebibliography}
 
 \begin{IEEEbiography}[{\includegraphics[width=1in,height=1.25in,clip,keepaspectratio]{me.png}}]{Hecheng Zhao} received the B.S. degree
 in Automation from
