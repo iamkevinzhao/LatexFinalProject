@@ -15,7 +15,7 @@
 %\doi{10.1109/ACCESS.2017.DOI}
 \doi{}
 
-\title{Recent Research Progress on Cognition Capabilities of Service Robots}
+\title{Recent Research Progress on Cognitive Capabilities of Service Robots}
 \author{\uppercase{Hecheng Zhao}\authorrefmark{1},
 \uppercase{Yuan Li\authorrefmark{2}, and Sukhan Lee}.\authorrefmark{3},
 \IEEEmembership{Fellow, IEEE}}
@@ -212,7 +212,7 @@ To find a point on the constraint manifold with minimum weighted distance, we ap
 \hat{x}^W=W\hat{x},\ P^W=WPW^T,\ M^W=WM
 \end{equation}
 
-where the matrix $M = [C1 C2]^T$ is the subspace of the constraint manifold. The probability
+where the matrix $M = [C_1\ C_2]^T$ is the subspace of the constraint manifold. The probability
 distribution is then orthogonally projected on the transformed manifold $M^W$ to satisfy the constraints
 between the data sources in the transformed space. Inverse WT is applied to
 obtain the fused mean estimate and covariance in the original space,
@@ -235,7 +235,7 @@ components in (\ref{xwprw}) and (\ref{pwprprtwt}), a close form simplification c
 \tilde{P}=M(M^TP^{-1}M)^{-1}M^T
 \end{equation}
 
-Due to the projection in extended space of $\mathbb{R}^{2N}$, (\ref{xmmtpmmtpx}) and (\ref{pmmtpmmt}) provide a fused result with respect to each data source. In the case of where $\hat{x}_1$ and $\hat{x}_2$ estimate the same entity, that is, $M=[I_N I_N]^T$, the fused result will be same for the two data sources. As such, a close form equation for fusing redundant data sources in $\mathbb{R}^N$ can be obtained from (\ref{xmmtpmmtpx}) and (\ref{pmmtpmmt}) as,
+Due to the projection in extended space of $\mathbb{R}^{2N}$, (\ref{xmmtpmmtpx}) and (\ref{pmmtpmmt}) provide a fused result with respect to each data source. In the case of where $\hat{x}_1$ and $\hat{x}_2$ estimate the same entity, that is, $M=[I_N\ I_N]^T$, the fused result will be same for the two data sources. As such, a close form equation for fusing redundant data sources in $\mathbb{R}^N$ can be obtained from (\ref{xmmtpmmtpx}) and (\ref{pmmtpmmt}) as,
 \begin{equation}
 \tilde{x}=(M^TP^{-1}M)^{-1}M^TP^{-1}\hat{x}
 \end{equation}
@@ -313,7 +313,7 @@ calibration location, as
 \mathbf{s}_{i,j}(t)=\bm{\alpha}_{i,j}(t)\times r_{i,j}+\bm{\delta}_{i,j}
 \end{equation}
 where $r_{i,j}$ represents the time-invariant RSS with no
-spatiotemporal disturbances present, $\bm{\alpha}_\{i,j\}(t)$ the multiplicative
+spatiotemporal disturbances present, $\bm{\alpha}_{i,j}(t)$ the multiplicative
 signal alteration factor due to the spatiotemporal disturbances of
 $r_{i,j}$, and $\bm{\sigma}_{i,j}$ the sensor noise. 
 
@@ -427,18 +427,18 @@ Octree-ICP is employed to get the refined pose estimation.
 \caption{Framework overview}
 \end{figure*}
 
-After detecting CLB, we could get the number and their
-position in 3D space. To describe object using CLB, we would
-build a statistical model including CLB’s number and relative
-positions between CLBs based on different view-point data.
-For single object, there can exists more than one CLB,
-however, it is impossible to observe all the surface of an object
-at the same time. We have to estimate the CLB feature existing
-in one frame data. Regarding CLB’s number, it is not difficult
-to understand this model. For relative positions, we would
-store all the observed distances between any two detected
-CLB in a list for each object and set the detection accuracy as
-the variance.
+%After detecting CLB, we could get the number and their
+%position in 3D space. To describe object using CLB, we would
+%build a statistical model including CLB’s number and relative
+%positions between CLBs based on different view-point data.
+%For single object, there can exists more than one CLB,
+%however, it is impossible to observe all the surface of an object
+%at the same time. We have to estimate the CLB feature existing
+%in one frame data. Regarding CLB’s number, it is not difficult
+%to understand this model. For relative positions, we would
+%store all the observed distances between any two detected
+%CLB in a list for each object and set the detection accuracy as
+%the variance.
 
 The object probability consists of two parts:
 \begin{equation}
@@ -686,7 +686,7 @@ FER-CNN (Ours) & 97\% & 89.5\% \\
 \end{table}
 
 \section{Conclusion}
-The Intelligent System and Robotics Institute has 
+In recent years, the Intelligent System and Robotics Institute has pushed the boundary of cognitive robotics in object recognition and SLAM fields. The Major Line Extractor has improved localization accuracy for indoor navigation. The novel algorithm has been applied to a number of real world applications. One of them is the robotic vacuum cleaners developed by LG Electronics. Additionally, the Wi-Fi Fingerprint becomes one of the auxiliary means that improve indoor SLAM, especially in solving "Robot Kidnapping" problems. The Covariance Projection Framework offers a new view of Gaussian linear filters, which facilitates the research on state estimation with multi-sensory setups. Moreover, the Institute has also made progress on object detection and semantic understanding. The Adaptive Bayesian Recognition enables accurate recognition and pose estimation on industrial objects without salient textures. With the integration of FER-CNN, we managed to extend the number of recognizable objects and their categories to a higher level.
 
 \bibliography{mybib}
 \bibliographystyle{IEEETran}
